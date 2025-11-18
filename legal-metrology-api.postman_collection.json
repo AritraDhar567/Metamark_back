@@ -1,0 +1,446 @@
+{
+  "info": {
+    "name": "Legal Metrology API - Complete",
+    "description": "Complete API collection for Legal Metrology Compliance System with AI Validation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "entity_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "API Index",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products - Scraping",
+      "item": [
+        {
+          "name": "Scrape Amazon Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.product && jsonData.product.product_id) {",
+                  "    pm.collectionVariables.set('product_id', jsonData.product.product_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://www.amazon.in/Harry-Potter-Philosophers-Stone-MinaLima/dp/1526626586\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/scrape",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "scrape"]
+            }
+          }
+        },
+        {
+          "name": "Scrape Flipkart Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.product && jsonData.product.product_id) {",
+                  "    pm.collectionVariables.set('product_id', jsonData.product.product_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://www.flipkart.com/lyphy-men-self-design-casual-white-shirt/p/itm7d9a39163a84e\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/scrape",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "scrape"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products - Validation",
+      "item": [
+        {
+          "name": "Validate Product (Vision + Gemini)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/validate/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "validate", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Single Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Compliance Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}/report",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}", "report"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Entity Tracking",
+      "item": [
+        {
+          "name": "Refresh Entity Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/entities/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "entities", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Get All Entities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/entities/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "entities", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Entities by Type - Manufacturers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/entities/?type=manufacturer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "entities", ""],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "manufacturer"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Entities by Type - Importers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/entities/?type=importer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "entities", ""],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "importer"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Entities by Type - Packers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/entities/?type=packer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "entities", ""],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "packer"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Entities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/entities/search?q=Bloomsbury&type=manufacturer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "entities", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "Bloomsbury"
+                },
+                {
+                  "key": "type",
+                  "value": "manufacturer"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Entity Details with Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/entities/{{entity_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "entities", "{{entity_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pre-Upload Validation",
+      "item": [
+        {
+          "name": "Validate Product Before Upload",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Premium Cotton Casual Shirt",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "High quality 100% cotton casual shirt for men. Comfortable fit with modern design.",
+                  "type": "text"
+                },
+                {
+                  "key": "listed_price",
+                  "value": "799",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "Fashion",
+                  "type": "text"
+                },
+                {
+                  "key": "manufacturer",
+                  "value": "ABC Textiles Pvt Ltd, Mumbai",
+                  "type": "text"
+                },
+                {
+                  "key": "country_of_origin",
+                  "value": "India",
+                  "type": "text"
+                },
+                {
+                  "key": "importer",
+                  "value": "XYZ Imports Ltd, New Delhi",
+                  "type": "text"
+                },
+                {
+                  "key": "importer_email",
+                  "value": "contact@xyzimports.com",
+                  "type": "text"
+                },
+                {
+                  "key": "importer_phone",
+                  "value": "011-12345678",
+                  "type": "text"
+                },
+                {
+                  "key": "packer",
+                  "value": "ABC Textiles",
+                  "type": "text"
+                },
+                {
+                  "key": "generic_name",
+                  "value": "Casual Shirt",
+                  "type": "text"
+                },
+                {
+                  "key": "net_quantity",
+                  "value": "1 Piece",
+                  "type": "text"
+                },
+                {
+                  "key": "weight",
+                  "value": "250g",
+                  "type": "text"
+                },
+                {
+                  "key": "dimensions",
+                  "value": "40cm x 70cm",
+                  "type": "text"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": "/path/to/image1.jpg"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": "/path/to/image2.jpg"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": "/path/to/image3.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/pre-validation/validate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "pre-validation", "validate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard & Reports",
+      "item": [
+        {
+          "name": "Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard/summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard", "summary"]
+            }
+          }
+        },
+        {
+          "name": "Export Violations CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard/export/violations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard", "export", "violations"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

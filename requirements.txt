@@ -1,0 +1,63 @@
+# Web framework & API
+Flask
+flask-cors
+
+# Database
+pymysql
+
+# Web scraping
+selenium
+webdriver-manager
+beautifulsoup4
+requests
+
+# Parsing, utilities
+lxml
+python-dotenv
+pytz
+
+# Google Cloud AI/ML
+google-genai
+google-cloud-vision
+protobuf
+google-api-core
+
+# Image handling & processing
+Pillow
+
+# AWS S3 (optional)
+boto3
+
+# Data handling
+openpyxl
+pandas
+
+# JSON validation, security
+jsonschema
+
+# Required if you have WebSockets for real-time status
+# flask-socketio
+# eventlet
+
+# For unicode/emoji/special char handling (sometimes important in OCR/text)
+regex
+
+# For colored console logs (optional but useful for dev)
+termcolor
+
+# For testing/dev tools
+pytest
+
+# For rate limiting (optionally for production)
+# flask-limiter
+
+# OS system utilities
+psutil
+
+# If you support PDF upload/validation:
+# pdfplumber
+
+# If you store config in YAML
+# pyyaml
+
+# (Remove the hash mark # to enable optional features as needed)
