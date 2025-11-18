@@ -62,3 +62,12 @@ psutil
 
 # (Remove the hash mark # to enable optional features as needed)
 gunicorn
+
+
+flask
+flask-cors
+flask-jwt-extended
+sqlalchemy
+pymysql
+gunicorn
+python-dotenv
