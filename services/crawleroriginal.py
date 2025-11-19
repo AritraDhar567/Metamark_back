@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import re
-import shutil
 from urllib.parse import urljoin, urlparse
 from config import Config
 
@@ -13,254 +12,279 @@ class ProductScraper:
             'User-Agent': Config.CRAWLER_USER_AGENT
         })
     
-    def _init_selenium(self):
-        """Initialize Selenium using system Google Chrome + Chromedriver installed in Docker"""
+    def scrape_amazon_product(self, url):
+        """Enhanced Amazon scraper using Selenium with debug"""
         from selenium import webdriver
+        from selenium.webdriver.common.by import By
         from selenium.webdriver.chrome.service import Service
         from selenium.webdriver.chrome.options import Options
-
-        options = Options()
-        options.add_argument("--headless=new")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--disable-software-rasterizer")
-        options.binary_location = "/usr/bin/google-chrome"
-        options.add_argument(f"user-agent={Config.CRAWLER_USER_AGENT}")
-
-        chromedriver_path = shutil.which("chromedriver")
-        if not chromedriver_path:
-            raise Exception("Chromedriver not found in Docker PATH")
-
-        driver = webdriver.Chrome(service=Service(chromedriver_path), options=options)
-        return driver
-
-
-    # ------------------ AMAZON SCRAPER --------------------
-    def scrape_amazon_product(self, url):
-        from selenium.webdriver.common.by import By
         from selenium.webdriver.support.ui import WebDriverWait
         from selenium.webdriver.support import expected_conditions as EC
-
+        from webdriver_manager.chrome import ChromeDriverManager
+        
         time.sleep(Config.CRAWLER_DELAY)
-
+        
         try:
-            driver = self._init_selenium()
+            options = Options()
+            options.add_argument('--headless')
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            options.add_argument(f'user-agent={Config.CRAWLER_USER_AGENT}')
+            
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
             driver.get(url)
-
+            
             wait = WebDriverWait(driver, 10)
-            wait.until(EC.presence_of_element_located((By.ID, "productTitle")))
-
+            wait.until(EC.presence_of_element_located((By.ID, 'productTitle')))
+            
+            # Try multiple ways to click read more
             try:
-                read_more_elements = driver.find_elements(
-                    By.CSS_SELECTOR,
-                    ".a-expander-prompt, #bookDescription_feature_div .a-expander-prompt, #productDescription .a-expander-prompt"
-                )
+                # Method 1: Find and click all expander buttons
+                read_more_elements = driver.find_elements(By.CSS_SELECTOR, 
+                    '.a-expander-prompt, #bookDescription_feature_div .a-expander-prompt, #productDescription .a-expander-prompt')
                 for elem in read_more_elements:
                     try:
                         driver.execute_script("arguments[0].scrollIntoView();", elem)
                         time.sleep(0.5)
                         driver.execute_script("arguments[0].click();", elem)
                         time.sleep(1)
-                    except:
-                        pass
-            except:
-                pass
-
-            for _ in range(3):
+                        print(f"Clicked read more button")
+                    except Exception as e:
+                        print(f"Could not click button: {e}")
+            except Exception as e:
+                print(f"No read more buttons found: {e}")
+            
+            # Scroll multiple times
+            for i in range(3):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 time.sleep(1)
-
+            
             html = driver.page_source
-            soup = BeautifulSoup(html, "html.parser")
-
-            with open("amazon_debug.html", "w", encoding="utf-8") as f:
+            soup = BeautifulSoup(html, 'html.parser')
+            
+            # SAVE HTML FOR DEBUGGING
+            with open('amazon_debug.html', 'w', encoding='utf-8') as f:
                 f.write(soup.prettify())
-
+            print("Saved amazon_debug.html for inspection")
+            
             product_data = {
-                "url": url,
-                "product_id": self._extract_amazon_product_id(url),
-                "title": self._get_text(soup, "#productTitle"),
-                "description": self._extract_amazon_description_full(soup),
-                "listed_price": self._extract_price(soup),
-                "currency": "INR",
-                "seller": self._get_text(soup, "#sellerProfileTriggerId") or "Amazon",
-                "category": self._extract_amazon_category(soup),
-                "marketplace": "Amazon",
-                "image_urls": self._extract_amazon_images(soup),
-                "publisher": self._extract_amazon_detail(soup, "Publisher"),
-                "language": self._extract_amazon_detail(soup, "Language"),
-                "isbn_10": self._extract_amazon_detail(soup, "ISBN-10"),
-                "isbn_13": self._extract_amazon_detail(soup, "ISBN-13"),
-                "dimensions": self._extract_amazon_detail(soup, "Dimensions"),
-                "weight": self._extract_amazon_detail(soup, "Item Weight"),
-                "page_count": self._extract_page_count(soup),
-                "country_of_origin": self._extract_amazon_detail(soup, "Country of Origin"),
-                "manufacturer": self._extract_amazon_detail(soup, "Manufacturer"),
-                "packer": self._extract_amazon_detail(soup, "Packer"),
-                "importer": self._extract_amazon_importer(soup),
-                "importer_email": self._extract_importer_email(soup),
-                "importer_phone": self._extract_importer_phone(soup),
-                "generic_name": self._extract_amazon_detail(soup, "Generic Name"),
-                "rating": self._extract_amazon_rating(soup),
-                "review_count": self._extract_amazon_review_count(soup),
+                'url': url,
+                'product_id': self._extract_amazon_product_id(url),
+                'title': self._get_text(soup, '#productTitle'),
+                'description': self._extract_amazon_description_full(soup),
+                'listed_price': self._extract_price(soup),
+                'currency': 'INR',
+                'seller': self._get_text(soup, '#sellerProfileTriggerId') or 'Amazon',
+                'category': self._extract_amazon_category(soup),
+                'marketplace': 'Amazon',
+                'image_urls': self._extract_amazon_images(soup),
+                'publisher': self._extract_amazon_detail(soup, 'Publisher'),
+                'language': self._extract_amazon_detail(soup, 'Language'),
+                'isbn_10': self._extract_amazon_detail(soup, 'ISBN-10'),
+                'isbn_13': self._extract_amazon_detail(soup, 'ISBN-13'),
+                'dimensions': self._extract_amazon_detail(soup, 'Dimensions'),
+                'weight': self._extract_amazon_detail(soup, 'Item Weight'),
+                'page_count': self._extract_page_count(soup),
+                'country_of_origin': self._extract_amazon_detail(soup, 'Country of Origin'),
+                'manufacturer': self._extract_amazon_detail(soup, 'Manufacturer'),
+                'packer': self._extract_amazon_detail(soup, 'Packer'),
+                'importer': self._extract_amazon_importer(soup),
+                'importer_email': self._extract_importer_email(soup),
+                'importer_phone': self._extract_importer_phone(soup),
+                'generic_name': self._extract_amazon_detail(soup, 'Generic Name'),
+                'rating': self._extract_amazon_rating(soup),
+                'review_count': self._extract_amazon_review_count(soup)
             }
-
+            
+            # Debug print
+            print(f"Extracted data:")
+            print(f"  Publisher: {product_data['publisher']}")
+            print(f"  Language: {product_data['language']}")
+            print(f"  ISBN-10: {product_data['isbn_10']}")
+            print(f"  ISBN-13: {product_data['isbn_13']}")
+            print(f"  Country: {product_data['country_of_origin']}")
+            print(f"  Importer: {product_data['importer']}")
+            
             driver.quit()
             return product_data
-
+            
         except Exception as e:
             print(f"Error scraping Amazon: {e}")
+            import traceback
+            traceback.print_exc()
             if 'driver' in locals():
                 driver.quit()
             return None
 
-
-
-    # ------------------ FLIPKART SCRAPER --------------------
+    
     def scrape_flipkart_product(self, url):
+        """Fixed Flipkart scraper with correct selectors"""
+        from selenium import webdriver
         from selenium.webdriver.common.by import By
+        from selenium.webdriver.chrome.service import Service
+        from selenium.webdriver.chrome.options import Options
         from selenium.webdriver.support.ui import WebDriverWait
         from selenium.webdriver.support import expected_conditions as EC
-
+        from webdriver_manager.chrome import ChromeDriverManager
+        
         time.sleep(Config.CRAWLER_DELAY)
-
+        
         try:
-            driver = self._init_selenium()
+            options = Options()
+            options.add_argument('--headless')
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            options.add_argument(f'user-agent={Config.CRAWLER_USER_AGENT}')
+            
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
             driver.get(url)
-
+            
             wait = WebDriverWait(driver, 10)
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".VU-ZEz, .B_NuCI, h1")))
-
-            for _ in range(3):
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.VU-ZEz, .B_NuCI, h1')))
+            
+            for i in range(3):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 time.sleep(1)
-
+            
             html = driver.page_source
-            soup = BeautifulSoup(html, "html.parser")
-
+            soup = BeautifulSoup(html, 'html.parser')
+            
+            # Extract title - use correct selector
             title = None
-            title_elem = soup.select_one("span.VU-ZEz")
+            title_elem = soup.select_one('span.VU-ZEz')
             if title_elem:
                 title = title_elem.get_text(strip=True)
             if not title:
-                title_elem = soup.select_one("h1 span")
+                title_elem = soup.select_one('h1 span')
                 if title_elem:
                     title = title_elem.get_text(strip=True)
-
+            
+            # Extract price - correct class
             price = None
-            price_elem = soup.select_one(".Nx9bqj")
+            price_elem = soup.select_one('.Nx9bqj')
             if price_elem:
+                price_text = price_elem.get_text(strip=True).replace('₹', '').replace(',', '')
                 try:
-                    price = float(price_elem.get_text(strip=True).replace("₹", "").replace(",", ""))
+                    price = float(price_text)
                 except:
                     pass
-
+            
+            # Extract rating
             rating = None
-            rating_elem = soup.select_one(".XQDdHH")
+            rating_elem = soup.select_one('.XQDdHH')
             if rating_elem:
                 try:
                     rating = float(rating_elem.get_text(strip=True))
                 except:
                     pass
-
+            
+            # Extract reviews
             reviews = None
-            review_elem = soup.select_one(".Wphh3N")
+            review_elem = soup.select_one('.Wphh3N')
             if review_elem:
-                match = re.search(r"(\d+)", review_elem.get_text().replace(",", ""))
+                review_text = review_elem.get_text().replace(',', '')
+                match = re.search(r'(\d+)', review_text)
                 if match:
                     reviews = int(match.group(1))
-
+            
+            # Extract specs from Product Details section
             specs = {}
-            spec_rows = soup.find_all("div", class_=lambda x: x and "1IKDg" in str(x))
+            spec_rows = soup.find_all('div', class_=lambda x: x and '1IKDg' in str(x))
             for row in spec_rows:
-                cols = row.find_all("div", class_="col")
+                cols = row.find_all('div', class_='col')
                 if len(cols) >= 2:
                     key = cols[0].get_text(strip=True).lower()
                     value = cols[1].get_text(strip=True)
                     if key and value:
                         specs[key] = value
-
-            seller = "Flipkart"
-            seller_elem = soup.find("span", string=lambda x: x and "Enterprise" in str(x))
+            
+            print(f"Extracted specs: {specs}")
+            
+            # Get seller
+            seller = 'Flipkart'
+            seller_elem = soup.find('span', string=lambda x: x and 'Enterprise' in str(x))
             if not seller_elem:
-                seller_elem = soup.find("div", class_=lambda x: x and "yeLeBc" in str(x))
+                seller_elem = soup.find('div', class_=lambda x: x and 'yeLeBc' in str(x))
             if seller_elem:
                 seller = seller_elem.get_text(strip=True)
-
+            
+            # Get images - fix selector
             images = []
-            img_elems = soup.find_all("img", class_=lambda x: x and "53J4C-" in str(x))
+            img_elems = soup.find_all('img', class_=lambda x: x and '53J4C-' in str(x))
             if not img_elems:
-                img_elems = soup.find_all("img", class_=lambda x: x and ("0DkuPH" in str(x) or "utBuJY" in str(x)))
+                img_elems = soup.find_all('img', class_=lambda x: x and ('0DkuPH' in str(x) or 'utBuJY' in str(x)))
 
             for img in img_elems[:Config.MAX_IMAGES_PER_PRODUCT]:
-                src = img.get("src")
-                if src and "http" in src:
-                    images.append(src.replace("/128/", "/832/").replace("/180/", "/832/"))
-
+                src = img.get('src')
+                if src and 'http' in src:
+                    images.append(src.replace('/128/', '/832/').replace('/180/', '/832/'))
+            
             product_data = {
-                "url": url,
-                "product_id": self._extract_flipkart_product_id(url),
-                "title": title or "Unknown",
-                "listed_price": price,
-                "currency": "INR",
-                "seller": seller,
-                "category": specs.get("ideal for", "Fashion"),
-                "marketplace": "Flipkart",
-                "image_urls": images,
-                "country_of_origin": None,
-                "manufacturer": specs.get("brand"),
-                "packer": None,
-                "importer": None,
-                "generic_name": specs.get("style code"),
-                "dimensions": specs.get("other dimensions"),
-                "weight": None,
-                "rating": rating,
-                "review_count": reviews,
+                'url': url,
+                'product_id': self._extract_flipkart_product_id(url),
+                'title': title or 'Unknown',
+                'description': None,  # Flipkart doesn't show description in HTML
+                'listed_price': price,
+                'currency': 'INR',
+                'seller': seller,
+                'category': specs.get('ideal for', 'Fashion'),
+                'marketplace': 'Flipkart',
+                'image_urls': images,
+                'country_of_origin': None,  # Not in specs for fashion
+                'manufacturer': specs.get('brand'),
+                'packer': None,
+                'importer': None,
+                'generic_name': specs.get('style code'),
+                'dimensions': specs.get('other dimensions'),
+                'weight': None,
+                'rating': rating,
+                'review_count': reviews
             }
-
+            
+            print(f"Final product: {product_data['title']}, price={product_data['listed_price']}")
+            
             driver.quit()
             return product_data
-
+            
         except Exception as e:
             print(f"Error scraping Flipkart: {e}")
+            import traceback
+            traceback.print_exc()
             if 'driver' in locals():
                 driver.quit()
             return None
 
 
-
-    # ------------------ GENERIC SCRAPER (unchanged) --------------------
+    
     def scrape_generic_product(self, url):
+        """Generic scraper"""
         time.sleep(Config.CRAWLER_DELAY)
+        
         try:
             response = self.session.get(url, timeout=10)
             response.raise_for_status()
-            soup = BeautifulSoup(response.content, "html.parser")
-
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
             product_data = {
-                "url": url,
-                "product_id": self._generate_product_id(url),
-                "title": self._extract_generic_title(soup),
-                "description": self._extract_generic_description(soup),
-                "listed_price": self._extract_generic_price(soup),
-                "currency": "INR",
-                "seller": self._extract_domain(url),
-                "category": "General",
-                "marketplace": self._extract_domain(url),
-                "image_urls": self._extract_generic_images(soup, url),
+                'url': url,
+                'product_id': self._generate_product_id(url),
+                'title': self._extract_generic_title(soup),
+                'description': self._extract_generic_description(soup),
+                'listed_price': self._extract_generic_price(soup),
+                'currency': 'INR',
+                'seller': self._extract_domain(url),
+                'category': 'General',
+                'marketplace': self._extract_domain(url),
+                'image_urls': self._extract_generic_images(soup, url)
             }
-
+            
             return product_data
-
+            
         except Exception as e:
             print(f"Error scraping generic product: {e}")
             return None
-
-
-    # ------------------ (YOUR EXISTING HELPERS BELOW — unchanged) --------------------
-    # (all helper functions kept exactly same)
-     # Amazon extraction methods
+    
+    # Amazon extraction methods
     def _extract_amazon_description_full(self, soup):
         """Extract full description"""
         desc_parts = []
