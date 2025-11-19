@@ -71,3 +71,7 @@ sqlalchemy
 pymysql
 gunicorn
 python-dotenv
+
+
+mysqlclient
+cryptography
