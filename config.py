@@ -6,15 +6,15 @@ load_dotenv()
 class Config:
     # Flask
     SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
-    DEBUG = os.getenv('DEBUG', 'True') == 'True'
+    DEBUG = os.getenv('FLASK_DEBUG', 'False') == 'True'
     
-    # Database
-    DB_HOST = os.getenv('DB_HOST', 'localhost')
-    DB_PORT = int(os.getenv('DB_PORT', 3306))
+    # Database (Railway MySQL)
+    DB_HOST = os.getenv('DB_HOST', 'mysql.railway.internal')
+    DB_PORT = int(os.getenv('DB_PORT', '3306'))
     DB_USER = os.getenv('DB_USER', 'root')
-    DB_PASSWORD = os.getenv('DB_PASSWORD', 'password')
-    DB_NAME = os.getenv('DB_NAME', 'legal_metrology')
-    
+    DB_PASSWORD = os.getenv('DB_PASSWORD')
+    DB_NAME = os.getenv('DB_NAME', 'railway')
+
     # JWT
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
     JWT_ACCESS_TOKEN_EXPIRES = 86400
@@ -24,10 +24,10 @@ class Config:
     USE_S3 = os.getenv('USE_S3', 'False') == 'True'
     
     # Google Cloud API Keys
-    GOOGLE_VISION_API_KEY = os.getenv('GOOGLE_VISION_API_KEY', 'your-vision-api-key')
-    GOOGLE_GEMINI_API_KEY = os.getenv('GOOGLE_GEMINI_API_KEY', 'your-gemini-api-key')
+    GOOGLE_VISION_API_KEY = os.getenv('GOOGLE_VISION_API_KEY')
+    GOOGLE_GEMINI_API_KEY = os.getenv('GOOGLE_GEMINI_API_KEY')
     
-    # OCR & CV
+    # OCR
     OCR_LANGUAGES = ['en', 'hi']
     OCR_CONFIDENCE_THRESHOLD = 0.6
     
@@ -37,4 +37,4 @@ class Config:
     MAX_IMAGES_PER_PRODUCT = 5
     
     # Compliance
-    COMPLIANCE_THRESHOLD = 80  # Percentage for passing
+    COMPLIANCE_THRESHOLD = 80
